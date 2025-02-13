@@ -1,0 +1,80 @@
+---
+title: "Neural Network"
+author: "Ursula Podosenin"
+date: "2025-02-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Load necessary libraries
+install.packages("neuralnet")
+library(neuralnet)
+library(caret)
+library(dplyr)
+library(ggplot2)
+
+# Load the built-in iris dataset
+data(iris)
+
+# Convert Species to numerical dummy variables for neural network
+iris$Setosa <- ifelse(iris$Species == "setosa", 1, 0)
+iris$Versicolor <- ifelse(iris$Species == "versicolor", 1, 0)
+iris$Virginica <- ifelse(iris$Species == "virginica", 1, 0)
+
+# Remove original categorical column
+iris <- iris %>% select(-Species)
+
+# View structure of the dataset
+str(iris)
+
+```
+
+```{r}
+
+set.seed(123)  # Set seed for reproducibility
+trainIndex <- createDataPartition(iris$Setosa, p = 0.7, list = FALSE)
+
+train_data <- iris[trainIndex, ]
+test_data <- iris[-trainIndex, ]
+
+```
+
+```{r}
+
+# Define the formula for the neural network
+nn_formula <- Setosa + Versicolor + Virginica ~ Sepal.Length + Sepal.Width + Petal.Length + Petal.Width
+
+# Train the neural network
+set.seed(123)
+nn_model <- neuralnet(nn_formula, data = train_data, hidden = c(5), linear.output = FALSE)
+
+# Plot the neural network
+plot(nn_model)
+
+```
+
+```{r}
+
+# Predict on test data
+nn_predictions <- compute(nn_model, test_data[, 1:4])$net.result
+
+# Convert probabilities to class labels
+predicted_labels <- apply(nn_predictions, 1, which.max)
+actual_labels <- apply(test_data[, 5:7], 1, which.max)
+
+# Convert numeric class labels back to species names
+class_names <- c("setosa", "versicolor", "virginica")
+predicted_species <- class_names[predicted_labels]
+actual_species <- class_names[actual_labels]
+
+# Create a confusion matrix
+confusionMatrix(factor(predicted_species, levels = class_names), 
+                factor(actual_species, levels = class_names))
+
+```
+
