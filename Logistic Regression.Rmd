@@ -1,0 +1,88 @@
+---
+title: "Logistic Regression"
+author: "Ursula Podosenin"
+date: "2025-02-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(caret)
+
+# Load the built-in mtcars dataset
+data(mtcars)
+
+# Convert 'am' to a factor for logistic regression
+mtcars$am <- factor(mtcars$am, levels = c(0, 1), labels = c("Automatic", "Manual"))
+
+# View structure of dataset
+str(mtcars)
+```
+
+```{r}
+
+# Check the distribution of the target variable
+table(mtcars$am)
+
+# Visualizing the relationship between transmission type and MPG
+ggplot(mtcars, aes(x = am, y = mpg, fill = am)) +
+  geom_boxplot() +
+  labs(title = "MPG Distribution by Transmission Type") +
+  theme_minimal()
+
+```
+
+```{r}
+
+set.seed(123)  # Set seed for reproducibility
+trainIndex <- createDataPartition(mtcars$am, p = 0.7, list = FALSE)
+
+train_data <- mtcars[trainIndex, ]
+test_data <- mtcars[-trainIndex, ]
+```
+
+```{r}
+
+# Fit the logistic regression model
+log_model <- glm(am ~ mpg + hp + wt, data = train_data, family = binomial)
+
+# Summary of the model
+summary(log_model)
+
+```
+
+```{r}
+
+# Predict on test data
+test_data$pred_prob <- predict(log_model, newdata = test_data, type = "response")
+
+# Convert probabilities to class labels (Threshold = 0.5)
+test_data$pred_class <- ifelse(test_data$pred_prob > 0.5, "Manual", "Automatic")
+test_data$pred_class <- factor(test_data$pred_class, levels = c("Automatic", "Manual"))
+
+# Confusion matrix
+confusionMatrix(test_data$pred_class, test_data$am)
+
+```
+
+```{r}
+
+# Compute accuracy
+accuracy <- mean(test_data$pred_class == test_data$am)
+print(paste("Accuracy:", round(accuracy, 3)))
+
+# ROC Curve and AUC
+library(pROC)
+roc_curve <- roc(test_data$am, test_data$pred_prob)
+plot(roc_curve, col = "blue", main = "ROC Curve for Logistic Regression")
+auc(roc_curve)
+
+```
+
