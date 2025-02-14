@@ -1,0 +1,63 @@
+---
+title: "Multiple Linear Regression"
+author: "Ursula Podosenin"
+date: "2025-02-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Load the mtcars dataset
+data(mtcars)
+
+# View the first few rows of the dataset
+head(mtcars)
+
+```
+
+```{r}
+
+# Summary statistics of the dataset
+summary(mtcars)
+
+# Structure of the dataset
+str(mtcars)
+```
+
+```{r}
+
+# Fit the multiple linear regression model
+model <- lm(mpg ~ cyl + disp + hp + wt + qsec, data = mtcars)
+
+# Summary of the model
+summary(model)
+
+```
+
+```{r}
+
+# Plot diagnostic plots
+par(mfrow = c(2, 2))
+plot(model)
+
+# Check for multicollinearity using the Variance Inflation Factor (VIF)
+install.packages("car")
+library(car)
+vif(model)
+
+```
+```{r}
+
+# Make predictions
+predictions <- predict(model, newdata = mtcars)
+
+# Compare predictions with actual values
+comparison <- data.frame(Actual = mtcars$mpg, Predicted = predictions)
+head(comparison)
+
+```
+
