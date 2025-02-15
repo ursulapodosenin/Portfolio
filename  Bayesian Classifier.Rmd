@@ -1,0 +1,58 @@
+---
+title: "Bayesian Classifier"
+author: "Ursula Podosenin"
+date: "2025-02-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Load necessary libraries
+library(e1071)   # For Naive Bayes classifier
+library(caret)   # For data partitioning and evaluation
+
+# Load the dataset
+data(iris)
+
+# Split the dataset into training and testing sets
+set.seed(123)  # For reproducibility
+index <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+train_data <- iris[index, ]
+test_data <- iris[-index, ]
+
+# Train a Naive Bayes classifier
+model <- naiveBayes(Species ~ ., data = train_data)
+
+# Predict on test set
+predictions <- predict(model, test_data)
+
+# Evaluate the model
+conf_matrix <- confusionMatrix(predictions, test_data$Species)
+print(conf_matrix)
+
+```
+
+```{r}
+
+
+# Visualization: Scatter plot with decision boundaries
+ggplot(test_data, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
+  geom_point(size = 3) +
+  labs(title = "Naive Bayes Classification on Iris Dataset",
+       x = "Petal Length", y = "Petal Width") +
+  theme_minimal()
+```
+
+```{r}
+
+# Extract key performance metrics
+accuracy <- conf_matrix$overall['Accuracy']
+precision <- conf_matrix$byClass[,'Precision']
+recall <- conf_matrix$byClass[,'Recall']
+f1_score <- 2 * ((precision * recall) / (precision + recall))
+```
+
