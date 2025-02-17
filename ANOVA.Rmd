@@ -1,0 +1,37 @@
+---
+title: "ANOVA"
+author: "Ursula Podosenin"
+date: "2025-02-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Load dataset
+data(mtcars)
+
+# Convert 'cyl' to a factor
+mtcars$cyl <- as.factor(mtcars$cyl)
+
+# Run ANOVA
+anova_model <- aov(mpg ~ cyl, data = mtcars)
+summary(anova_model)
+
+# Boxplot to visualize differences
+boxplot(mpg ~ cyl, data = mtcars, 
+        main = "MPG by Number of Cylinders", 
+        xlab = "Number of Cylinders", 
+        ylab = "Miles per Gallon", 
+        col = c("red", "blue", "green"))
+
+# Diagnostic plots
+par(mfrow=c(2,2)) # Arrange plots
+plot(anova_model)  # Standard ANOVA diagnostic plots
+par(mfrow=c(1,1)) # Reset layout
+
+```
+
