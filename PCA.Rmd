@@ -1,0 +1,81 @@
+---
+title: "PCA"
+author: "Ursula Podosenin"
+date: "2025-02-17"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Load the dataset
+data(iris)
+
+# View the first few rows
+head(iris)
+```
+
+```{r}
+
+# Remove the species column (only keep numeric data)
+iris_numeric <- iris[, 1:4]
+
+# Check structure
+str(iris_numeric)
+```
+
+```{r}
+
+# Standardize the numeric data
+iris_scaled <- scale(iris_numeric)
+
+# View summary statistics
+summary(iris_scaled)
+```
+
+```{r}
+
+# Perform PCA
+pca_result <- prcomp(iris_scaled, center = TRUE, scale. = TRUE)
+
+# View PCA summary
+summary(pca_result)
+```
+
+```{r}
+
+# View standard deviation of principal components
+pca_result$sdev
+
+# View loadings (rotation matrix)
+pca_result$rotation
+```
+
+```{r}
+
+# Scree plot
+screeplot(pca_result, type = "lines", main = "Scree Plot")
+```
+
+```{r}
+
+# Create PCA plot
+library(ggplot2)
+
+# Convert PCA results into a dataframe
+pca_data <- as.data.frame(pca_result$x)
+pca_data$Species <- iris$Species  # Add species back for coloring
+
+# Scatter plot of first two principal components
+ggplot(pca_data, aes(x = PC1, y = PC2, color = Species)) +
+  geom_point(size = 3) +
+  theme_minimal() +
+  ggtitle("PCA of Iris Dataset")
+
+```
+
