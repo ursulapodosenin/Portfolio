@@ -1,0 +1,87 @@
+---
+title: "SVM Project"
+author: "Ursula Podosenin"
+date: "2025-04-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Install packages if needed
+if (!require("e1071")) install.packages("e1071")
+if (!require("caret")) install.packages("caret")
+if (!require("ggplot2")) install.packages("ggplot2")
+
+# Load libraries
+library(e1071)
+library(caret)
+library(ggplot2)
+
+```
+
+```{r}
+
+# View the structure
+str(iris)
+
+# Check first few rows
+head(iris)
+
+# Summary
+summary(iris)
+
+```
+
+```{r}
+
+set.seed(123) # for reproducibility
+train_index <- createDataPartition(iris$Species, p = 0.8, list = FALSE)
+
+train_data <- iris[train_index, ]
+test_data <- iris[-train_index, ]
+
+```
+
+```{r}
+
+# Train SVM model
+svm_model <- svm(Species ~ ., data = train_data, kernel = "linear")
+
+# View the model
+print(svm_model)
+
+```
+
+```{r}
+
+# Predict on test data
+predictions <- predict(svm_model, test_data)
+
+# View predictions
+head(predictions)
+
+```
+
+```{r}
+# Confusion matrix
+conf_matrix <- confusionMatrix(predictions, test_data$Species)
+
+# Print results
+print(conf_matrix)
+
+```
+
+```{r}
+
+# Train again using only 2 features
+svm_model_2d <- svm(Species ~ Petal.Length + Petal.Width, data = train_data, kernel = "linear")
+
+# Plot
+plot(svm_model_2d, train_data, Petal.Length ~ Petal.Width)
+
+```
+
