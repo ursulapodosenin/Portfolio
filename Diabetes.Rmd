@@ -1,0 +1,200 @@
+---
+title: "Diabetes"
+author: "Ursula Podosenin"
+date: "2025-05-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+# Loading the neccessary packages
+library(rpart)
+install.packages("rpart.plot", repos = "http://cran.us.r-project.org")
+library(rpart.plot)
+library(nnet)
+library(caret)
+library(pROC)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(corrplot)
+install.packages("GGally", repos = "http://cran.us.r-project.org")
+library(GGally)
+```
+### General
+
+```{r}
+
+# Getting the working directory
+getwd()
+```
+
+```{r}
+
+# Reading the file
+data<- read.csv("/Users/ursulapodosenin/Desktop/diabetes.csv")
+head(data)
+```
+### Exploratory Data Analysis
+
+```{r}
+
+# Getting summary statistics
+summary(data)
+
+# Checking the structure of the data
+str(data)
+
+# Looking for missing values 
+sapply(data, function(x) sum(is.na(x))) 
+```
+
+```{r}
+
+# Checking the distribution of the diabetes outcome
+ggplot(data, aes(x = factor(Outcome))) +
+  geom_bar(fill = c("steelblue", "firebrick")) +
+  labs(title = "Diabetes Outcome Distribution", x = "Outcome", y = "Count") +
+  theme_minimal()
+```
+```{r}
+
+# Creating a histogram for all numeric values
+data_long <- melt(data, id.vars = "Outcome")
+ggplot(data_long, aes(x = value)) +
+  facet_wrap(~variable, scales = "free", ncol = 3) +
+  geom_histogram(bins = 30, fill = "darkcyan", color = "white") +
+  labs(title = "Distribution of All Features") +
+  theme_minimal()
+
+```
+```{r}
+
+# Creating box plots grouped by the outcome
+ggplot(data_long, aes(x = factor(Outcome), y = value, fill = factor(Outcome))) +
+  geom_boxplot() +
+  facet_wrap(~variable, scales = "free", ncol = 3) +
+  labs(title = "Feature Distributions by Diabetes Outcome", x = "Outcome") +
+  theme_minimal()
+```
+
+```{r}
+
+# Creating a correlation matrix
+corr_matrix <- cor(data[, -9])  # exclude Outcome
+corrplot(corr_matrix, method = "color", addCoef.col = "black",
+         tl.cex = 0.8, number.cex = 0.7, title = "Correlation Matrix",
+         mar = c(0, 0, 1, 0))
+```
+```{r}
+
+# Plotting BMI vs. Age by diabetes outcome
+ggplot(data, aes(x = Age, y = BMI, color = factor(Outcome))) +
+  geom_point(alpha = 0.7) +
+  labs(title = "BMI vs Age Colored by Diabetes Outcome", color = "Outcome") +
+  theme_minimal()
+```
+
+
+```{r}
+
+# Setting the seed so my code can be reproduced
+set.seed(745)
+```
+
+```{r}
+
+# Splitting the data into training and test sets
+trainIndex <- createDataPartition(data$Outcome, p = 0.7, list = FALSE)
+trainData <- data[trainIndex, ]
+testData <- data[-trainIndex, ]
+```
+
+## Decision Tree Model
+
+```{r}
+
+# Creating a decision tree model
+dt_model <- rpart(Outcome ~ ., data = trainData, method = "class")
+rpart.plot(dt_model, main = "Decision Tree for Diabetes Prediction")
+```
+
+```{r}
+
+# Creating predictions on the test data
+dt_probs <- predict(dt_model, testData)[, 2]  # probability of class 1
+dt_preds <- ifelse(dt_probs > 0.5, 1, 0)
+```
+
+```{r}
+
+# Evaluating my model using a confusion matrix and checking accuracy
+dt_cm <- confusionMatrix(as.factor(dt_preds), as.factor(testData$Outcome))
+dt_cm
+```
+
+### Neural Network
+
+```{r}
+
+# Normalizing the data
+maxs <- apply(trainData[, -9], 2, max)
+mins <- apply(trainData[, -9], 2, min)
+
+# Scaling the train and test data
+scaled_train <- as.data.frame(scale(trainData[, -9], center = mins, scale = maxs - mins))
+scaled_test <- as.data.frame(scale(testData[, -9], center = mins, scale = maxs - mins))
+
+```
+
+```{r}
+
+# Adding in the diabetes outcome
+scaled_train$Outcome <- trainData$Outcome
+scaled_test$Outcome <- testData$Outcome
+```
+
+```{r}
+
+# Creating the neural network model
+nn_model <- nnet(Outcome ~ ., data = scaled_train, size = 5, maxit = 200, linout = FALSE)
+```
+
+```{r}
+
+# Making predictions on the test data
+nn_probs <- predict(nn_model, scaled_test[, -9])
+nn_preds <- ifelse(nn_probs > 0.5, 1, 0)
+```
+
+```{r}
+
+# Evaluating my model using a confusion matrix and checking accuracy
+nn_cm <- confusionMatrix(as.factor(nn_preds), as.factor(scaled_test$Outcome))
+nn_cm
+```
+
+### ROC Curve
+
+```{r}
+
+# Checking the ROC for both models
+dt_roc <- roc(testData$Outcome, dt_probs)
+nn_roc <- roc(scaled_test$Outcome, nn_probs)
+```
+
+```{r}
+
+# Plotting the ROC curve for both models
+# Plot both ROC curves
+plot(dt_roc, col = "blue", main = "ROC Curve: Decision Tree vs Neural Network")
+lines(nn_roc, col = "red")
+legend("bottomright", legend = c("Decision Tree", "Neural Network"),
+       col = c("blue", "red"), lwd = 2)
+
+```
+
